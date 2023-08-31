@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Module to obfuscate log fields using regular expressions.
+Module for logging and data obfuscation.
 """
 
+
 import logging
-import re
 from typing import List
 
 
@@ -22,6 +22,30 @@ class RedactingFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         log_message = super().format(record)
         for field in self.fields:
-            log_message = re.sub(rf'{field}=([^;]+)',
-                                 f'{field}={self.REDACTION}', log_message)
+            log_message = log_message.replace(field + '=', field + '=' +
+                                              self.REDACTION)
         return log_message
+
+
+PII_FIELDS = ("name", "email", "phone", "ssn", "password")
+
+
+def get_logger() -> logging.Logger:
+    """
+    Create a logger named "user_data" with a StreamHandler using
+    RedactingFormatter.
+
+    Returns:
+        logging.Logger: The configured logger object.
+    """
+    logger = logging.getLogger("user_data")
+    logger.setLevel(logging.INFO)
+
+    handler = logging.StreamHandler()
+    formatter = RedactingFormatter(fields=PII_FIELDS)
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+    logger.propagate = False
+
+    return logger
