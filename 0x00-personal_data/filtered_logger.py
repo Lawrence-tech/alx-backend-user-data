@@ -3,28 +3,25 @@
 Module to obfuscate log fields using regular expressions.
 """
 
+import logging
 import re
 from typing import List
 
 
-def filter_datum(fields: List[str], redaction: str, message: str, separator:
-                 str) -> str:
-    """
-    Replace occurrences of certain field values with the redaction string.
+class RedactingFormatter(logging.Formatter):
+    """ Redacting Formatter class """
 
-    Args:
-        fields (List[str]): List of strings representing fields to obfuscate.
-        redaction (str): String to replace the field values.
-        message (str): Log line containing field-value pairs.
-        separator (str): Character separating fields in the log line.
+    REDACTION = "***"
+    FORMAT = "[HOLBERTON] %(name)s %(levelname)s %(asctime)-15s: %(message)s"
+    SEPARATOR = ";"
 
-    Returns:
-        str: Log message with specified fields obfuscated.
-    """
+    def __init__(self, fields: List[str]):
+        super(RedactingFormatter, self).__init__(self.FORMAT)
+        self.fields = fields
 
-    for field in fields:
-        pattern = re.escape(field) + r'=[^' + re.escape(separator) + r']+'
-        replacement = field + '=' + redaction
-        message = re.sub(pattern, replacement, message)
-
-    return message
+    def format(self, record: logging.LogRecord) -> str:
+        log_message = super().format(record)
+        for field in self.fields:
+            log_message = re.sub(rf'{field}=([^;]+)',
+                                 f'{field}={self.REDACTION}', log_message)
+        return log_message
