@@ -58,22 +58,24 @@ class DB:
         return new_user
 
     def find_user_by(self, **kwargs) -> User:
-        """Find a user in the database by the specified keyword arguments.
+        """Find a user in the database by keyword arguments.
 
         Args:
-            **kwargs: Arbitrary keyword arguments to filter the query.
+            **kwargs: Arbitrary keyword arguments for filtering.
 
         Returns:
-            User: The User object that matches the query.
+            User: The first User object found matching the query.
 
         Raises:
-            NoResultFound: If no results are found.
-            InvalidRequestError: If invalid query arguments are passed.
+            NoResultFound: When no results are found.
+            InvalidRequestError: When incorrect query arguments are passed.
         """
         try:
             user = self._session.query(User).filter_by(**kwargs).first()
             if user is None:
-                raise NoResultFound("No user found for the given criteria")
+                raise NoResultFound("No user found with the specified
+                                    criteria")
             return user
         except InvalidRequestError as e:
-            raise InvalidRequestError("Invalid query arguments") from e
+            self._session.rollback()
+            raise e
